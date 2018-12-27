@@ -1,0 +1,36 @@
+function E = EmitConst(EF,hour)
+%function E = Emit(EF)
+%use to simulate transport process which follows a fixed patter n
+%in this case unit of E:molec/cm^3/s
+
+%Input:
+%EF: Emission flux molec/cm^2/s
+
+%Output:
+%E: Emission flux molec/cm^2/s
+E = 0.1*EF*(hour >= 0 & hour < 6)+EF*(hour >= 6 & hour < 9) +...
+    0.4*EF*(hour >= 9 & hour < 16)+EF*(hour >= 16 & hour < 19) +...
+    0.4*EF*(hour >= 19 & hour < 24)
+% % build multiplier
+% 
+% h = 0:23; %hour
+% 
+% m = nan(size(h)); %multiplier
+% 
+% m(h<6)                                 = 0.1;
+% 
+% m(h>=6  & h<9)                 = 1.0;
+% 
+% m(h>=9  & h<16)              = 0.4;
+% 
+% m(h>=16 & h<19)             = 0.1;
+% 
+% m(h>=19)                            = 0.4;
+% 
+%  
+% 
+% % interpolate
+% 
+% m_int = interp1(h,m,hour,'nearest');
+% 
+% E = EF.*m_int;
