@@ -1,0 +1,195 @@
+% smog_question_in_F0AM_model
+% This example shows a model setup for simulation of an "average" diurnal cycle at a ground location.
+% In particular, we will try to simulate ozone production.
+% Read comments in each section for a guided tour.
+
+% Lixu
+
+clear;
+clc;
+%% OBSERVATIONS
+%{
+Constraints are taken from observations at the Centerville, AL site of the 2013 SOAS field campaign.
+The file loaded below contains these observations averaged to a 24-hour cycle  in 1-hour increments. 
+Note that constraints CANNOT contains NaNs or negative numbers (data in this file has already been filtered).
+Thanks to J. Kaiser for compiling these observations and to all the hard-working researchers for collecting them.
+%}
+
+load Obs_SOAS_CampaignAvg_60min.mat %structure "SOAS"
+
+%% METEOROLOGY(SZA can be calculated by sun_position function)
+%{
+P, T and RH were measured at the site and will be updated every step of the simulation.
+
+SZA was not measured, so we can use a function to calculate it.
+
+kdil is a physical loss constant for all species; 1 per day is a typical value.
+%}
+
+%calculate solar zenith angles for day in middle of campaign
+o = ones(size(SOAS.T))
+time.year           = 2013*o;
+time.month          = 6*o;
+time.day            = 30*o;
+time.hour           = SOAS.Time;
+time.min            = 0*o;
+time.sec            = 0*o;
+time.UTC            = -5;
+location.latitude   = 32.903;
+location.longitude  = -87.250;
+location.altitude   = 126;
+sun = sun_position(time,location); %fields zenith and azimuth
+
+%(Calculates SZA based on date, time and location coordinates. )
+
+Met = {...
+%   names       %values
+    'P'          SOAS.P; %Pressure, mbar
+    'T'          SOAS.T; %Temperature, K
+    'RH'         SOAS.RH; %Relative Humidity, %
+    'SZA'        sun.zenith; %solar zenith angle, degrees
+    'kdil'       1/10000; %dilution constant, k = WindSpeed(1m/s)/Width(10000m)
+    'jcorr'      1; 
+    };
+
+%% CHEMICAL CONCENTRATIONS(HoldMe)
+%{
+Concentrations are initialized using observations or fixed values.
+Species with HoldMe = 1 will be held constant throughout each step.
+Species with HoldMe = 0 are only initialized at the start of the run, because
+ ModelOptions.LinkSteps=1 (see below). For this particular case, NO2 and O3 are
+ unconstrained because we are investigating ozone production.
+When many species are used, it helps to organize alphabetically or by functional group.
+%}
+
+InitConc = {...
+    % names             conc(ppb)            HoldMe %Hold constant throughout model step   
+    
+    %Inorganics
+    'CO'                100                   0;
+   
+    %NOx
+    'NO'                10                    0; %FixNOx flag set in options
+    'NO2'               20                    0;
+    
+    %CxHy
+    'CH4'               1500                  0;
+    'C2H4'              100                   0;
+};
+
+%% CHEMISTRY(just add emission moledule into it)
+%{
+ChemFiles is a cell array of strings specifying functions and scripts for the chemical mechanism.
+THE FIRST CELL is always a function for generic K-values.
+THE SECOND CELL is always a function for J-values (photolysis frequencies).
+All other inputs are scripts for mechanisms and sub-mechanisms.
+Here we give example using MCMv3.3.1. Note that this mechanism was extracted from the MCM website for
+the specific set of initial species included above.
+%}
+ChemFiles = {...
+   'MCMv331_K(Met)';
+   'MCMv331_J(Met,0)'; %Jmethod flag of 0 specifies default MCM parameterization
+   %'MCMv331_DielExampleChemistry';
+   'ExpConstantEmission'; %add at 11/24/2018, adapted at 12/1/2018
+   };
+
+%% DILUTION CONCENTRATIONS(units:ppb)(don't worry about it, make some plausible data would be fine)
+% Background concentrations are taken from observations in ExampleSetup_LagrangianPlume.
+
+
+BkgdConc = {...
+%   names               values
+%    'DEFAULT'           0         ;... %0 for all zeros, 1 to use InitConc
+%    Inorganics
+     'CO'                80        ;...
+     'O3'                30        ;...
+%    CxHy
+     'CH4'               1300      ;...
+     'C2H4'              80        ;...%add C2H4 as VOC
+%    NOx
+     'NO'                8         ;...
+     'NO2'               18        ;...
+};
+
+
+%% OPTIONS
+%{
+"Verbose" can be set from 0-3; this just affects the level of detail printed to the command
+  window regarding model progress.
+"EndPointsOnly" is set to 1 because we only want the last point of each step.
+"LinkSteps" is set to 1 so that non-constrained species are carried over between steps.
+"Repeat" is set to 3 to loop through the full set of constraints 3 times.
+"IntTime" is the integration time for each step, equal to the spacing of the data (60 minutes).
+"TimeStamp" is set to the hour-of-day for observations.
+"SavePath" give the filename only (in this example); the default save directory is the UWCMv3\Runs folder.
+"FixNOx" forces total NOx to be reset to constrained values at the beginning of every step.
+%}
+
+ModelOptions.Verbose        = 1;
+ModelOptions.EndPointsOnly  = 1;     %only want the last pint of each, difference 
+ModelOptions.LinkSteps      = 1;     %for using end concentrations from one step to initialize the next step, would be suppressed if Holdme=1
+ModelOptions.Repeat         = 2;
+ModelOptions.IntTime        = 3600;  %units: second (time of each step)
+ModelOptions.TimeStamp      = SOAS.Time;
+ModelOptions.SavePath       = 'DielExampleOutput';
+ModelOptions.FixNOx         = 0;
+
+%% MODEL RUN(do not need to change)
+% Now we call the model. Note this may take several minutes to run, depending on your system.
+% Output will be saved in the "SavePath" above and will also be written to the structure S.
+% Let's also throw away the inputs (don't worry, they are saved in the output structure).
+
+S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions);
+clear Met InitConc ChemFiles BkgdConc ModelOptions
+%just use to release storage space.
+%% PUT DATA INTO EXCEL FILE (12/3/2018)
+SplitRun(S,'rep')
+S2.Time = S2.Time - 24; %make timestamps the same
+
+title = {'time','NO','NO2','NOx','O3','C2H4','OH','HO2'};
+time = S.Time %SOAS.Time&SOAS.NO are the data in SOAS structure
+NO = [S1.Conc.NO;S2.Conc.NO];
+NO2 = [S1.Conc.NO2;S2.Conc.NO2];
+NOx = NO + NO2;
+O3 = [S1.Conc.O3;S2.Conc.O3];
+C2H4 = [S1.Conc.C2H4;S2.Conc.C2H4];
+OH = [S1.Conc.OH;S2.Conc.OH];
+HO2 = [S1.Conc.HO2;S2.Conc.HO2];
+xlswrite('testdata.xlsx',title);
+xlswrite('testdata.xlsx',time,'sheet1','A2');
+xlswrite('testdata.xlsx',NO,'sheet1','B2');
+xlswrite('testdata.xlsx',NO2,'sheet1','C2')
+xlswrite('testdata.xlsx',NOx,'sheet1','D2')
+xlswrite('testdata.xlsx',O3,'sheet1','E2')
+xlswrite('testdata.xlsx',C2H4,'sheet1','F2')
+xlswrite('testdata.xlsx',OH,'sheet1','G2')
+xlswrite('testdata.xlsx',HO2,'sheet1','H2')
+%% PLOTTING, ANALYSIS AND PUTTING FIG INTO EXCEL FILE(12/25/2018)
+%(Github:https://github.com/michellehirsch/xlswritefig)
+%(https://blogs.mathworks.com/pick/2016/10/21/write-your-figures-to-excel/)
+%test: Let's see how NO changed over time
+
+% First, let's separate the two days using SplitRun.
+
+% The first day is effectively "spin-up" for secondary and intermediate species.
+
+
+S1.Conc.NOx = S1.Conc.NO + S1.Conc.NO2;
+S2.Conc.NOx = S2.Conc.NO + S1.Conc.NO2;
+PlotConc('NOx',{S1,S2});
+legend('Day 1','Day 2');
+xlswritefig(gcf,'testdata.xlsx', 'sheet2', 'A1')
+
+PlotConc('O3',{S1,S2});
+legend('Day 1','Day 2');
+xlswritefig(gcf,'testdata.xlsx', 'sheet3', 'A1')
+
+PlotConc('C2H4',{S1,S2});
+legend('Day 1','Day 2');
+xlswritefig(gcf,'testdata.xlsx', 'sheet4', 'A1')
+
+S1.Conc.HOx = S1.Conc.OH + S1.Conc.HO2;
+S2.Conc.HOx = S2.Conc.OH + S1.Conc.HO2;
+PlotConc('HOx',{S1,S2});
+legend('Day 1','Day 2');
+xlswritefig(gcf,'testdata.xlsx', 'sheet5', 'A1')
