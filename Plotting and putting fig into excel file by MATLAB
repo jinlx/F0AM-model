@@ -1,0 +1,4 @@
+PlotConc('NOx',{S1,S2}); %two days
+legend('Day 1','Day 2');
+xlswritefig(gcf,'testdata.xlsx', 'sheet2', 'A1')
+%note: xlswritefig should be used after every fig you plot
