@@ -1,0 +1,12 @@
+# read required packages
+require("data.table")
+require("dplyr")
+# fast read in the package for csv
+RH <- fread("/Users/macbook/Downloads/hourly_RH_DP_2017.csv")
+wind <- fread("/Users/macbook/Downloads/hourly_WIND_2017.csv")
+# pick up RH data of Idaho State
+idaho.ada.RH <- RH %>% filter(`State Name` == "Idaho") %>% filter(`County Name` == "Ada")
+idaho.ada.wind <- wind %>% filter(`State Name` == "Idaho") %>% filter(`County Name` == "Ada")
+# write data
+fwrite(idaho.ada.RH, "/Users/macbook/Downloads/Idaho Ada RH.csv")
+fwrite(idaho.ada.wind, "/Users/macbook/Downloads/Idaho Ada Wind.csv")
