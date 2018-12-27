@@ -1,0 +1,12 @@
+%% put data into an excel
+title = {'time','X'};
+time = [0:47]' %two days, 48 hours
+X = [S1.Conc.X;S2.Conc.X];
+
+xlswrite('PutDataIntoExcel.xlsx',title); %set title
+
+xlswrite('PutDataIntoExcel.xlsx',time,'sheet1','A2'); %put first parameter(time) data into the position
+%matched the title
+
+xlswrite('PutDataIntoExcel.xlsx',X,'sheet1','B2'); %put second parameter(X) data into specific position
+%matched the title
