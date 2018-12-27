@@ -89,7 +89,7 @@ the specific set of initial species included above.
 ChemFiles = {...
    'MCMv331_K(Met)';
    'MCMv331_J(Met,0)'; %Jmethod flag of 0 specifies default MCM parameterization
-   %'MCMv331_DielExampleChemistry';
+   'MCMv331_DielExampleChemistry';
    'ExpConstantEmission'; %add at 11/24/2018, adapted at 12/1/2018
    };
 
