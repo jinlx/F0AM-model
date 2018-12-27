@@ -1,0 +1,4 @@
+%this script is used to test the model
+%no chemical reaction is included in the model
+SpeciesToAdd = {...
+'CO';'O3';'CH4';'C2H4';'NO';'NO2';};
