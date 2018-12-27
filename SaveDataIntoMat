@@ -1,0 +1,29 @@
+%%this script is used to save data from workspace into matlab data form
+%read nonsmoke data into workspace
+
+clc;clear;
+NS.PAN = xlsread('Boise_data_for_Lixu.xlsx','D5:D28'); %unit:pptv
+NS.O3 = xlsread('Boise_data_for_Lixu.xlsx','E5:E28');  %unit:ppbv
+NS.NO = xlsread('Boise_data_for_Lixu.xlsx','F5:F28');
+NS.NOz = xlsread('Boise_data_for_Lixu.xlsx','G5:G28');
+NS.NOy = xlsread('Boise_data_for_Lixu.xlsx','H5:H28');
+NS.SO2 = xlsread('Boise_data_for_Lixu.xlsx','I5:I28');
+NS.CO = xlsread('Boise_data_for_Lixu.xlsx','J5:J28');
+NS.PM = xlsread('Boise_data_for_Lixu.xlsx','K5:K28'); %unit:ug/m3
+%read smoke data into workspace
+SK.PAN = xlsread('Boise_data_for_Lixu.xlsx','D33:D56'); %unit:pptv
+SK.O3 = xlsread('Boise_data_for_Lixu.xlsx','E33:E56');  %unit:ppbv
+SK.NO = xlsread('Boise_data_for_Lixu.xlsx','F33:F56');
+SK.NOz = xlsread('Boise_data_for_Lixu.xlsx','G33:G56');
+SK.NOy = xlsread('Boise_data_for_Lixu.xlsx','H33:H56');
+SK.SO2 = xlsread('Boise_data_for_Lixu.xlsx','I33:I56');
+SK.CO = xlsread('Boise_data_for_Lixu.xlsx','J33:J56');
+SK.PM = xlsread('Boise_data_for_Lixu.xlsx','K33:K56'); %unit:ug/m3
+%read metorological data into workspace
+Mete.P = xlsread('08182017_boise(ada)_meteorological_data.xlsx','C3:C26');
+Mete.T = xlsread('08182017_boise(ada)_meteorological_data.xlsx','F3:F26');
+Mete.RH = xlsread('08182017_boise(ada)_meteorological_data.xlsx','D3:D26');
+Mete.Wind = xlsread('08182017_boise(ada)_meteorological_data.xlsx','E3:E26');
+
+%save data from workspace into matlab data form
+save('Boise.mat');
